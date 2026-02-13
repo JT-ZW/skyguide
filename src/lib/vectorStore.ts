@@ -1,4 +1,4 @@
-import { CloudClient } from 'chromadb';
+import { CloudClient, DefaultEmbeddingFunction } from 'chromadb';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 
 // Load environment variables (for npm run ingest script)
@@ -22,12 +22,16 @@ const client = new CloudClient({
   database: process.env.CHROMA_DATABASE || 'RTG-Policy-database1',
 });
 
+// Configure embedding function for ChromaDB Cloud
+const embeddingFunction = new DefaultEmbeddingFunction();
+
 export const COLLECTION_NAME = 'rtg_policies';
 
 export async function getOrCreateCollection() {
   try {
     const collection = await client.getOrCreateCollection({
       name: COLLECTION_NAME,
+      embeddingFunction: embeddingFunction,
       metadata: { 'hnsw:space': 'cosine' },
     });
     return collection;
