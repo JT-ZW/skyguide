@@ -26,10 +26,16 @@ export const COLLECTION_NAME = 'rtg_policies';
 
 // Simple embedding function using Cohere API directly
 async function generateEmbedding(text: string): Promise<number[]> {
+  const cohereKey = process.env.COHERE_API_KEY;
+  
+  if (!cohereKey) {
+    throw new Error('COHERE_API_KEY environment variable is not set');
+  }
+  
   const response = await fetch('https://api.cohere.ai/v1/embed', {
     method: 'POST',
     headers: {
-      'Authorization': `${process.env.COHERE_API_KEY}`,
+      'Authorization': cohereKey,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
