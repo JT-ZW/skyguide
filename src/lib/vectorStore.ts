@@ -31,16 +31,18 @@ async function generateEmbedding(text: string): Promise<number[]> {
     headers: {
       'Authorization': `Bearer ${process.env.COHERE_API_KEY}`,
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     },
     body: JSON.stringify({
       texts: [text],
-      model: 'embed-english-v3.0',
+      model: 'embed-english-light-v3.0',
       input_type: 'search_query',
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Cohere API error: ${response.statusText}`);
+    const errorData = await response.text();
+    throw new Error(`Cohere API error: ${response.status} ${response.statusText} - ${errorData}`);
   }
 
   const data = await response.json();
