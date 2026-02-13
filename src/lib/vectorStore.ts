@@ -29,7 +29,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
   const response = await fetch('https://api.cohere.ai/v1/embed', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.COHERE_API_KEY}`,
+      'Authorization': `${process.env.COHERE_API_KEY}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
