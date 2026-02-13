@@ -15,6 +15,18 @@ const nextConfig: NextConfig = {
     'sharp',
     '@huggingface/transformers',
   ],
+  // Exclude heavy packages from serverless function tracing
+  outputFileTracingExcludes: {
+    '/api/**': [
+      'node_modules/onnxruntime-node/**',
+      'node_modules/@img/sharp-libvips-linuxmusl-x64/**',
+      'node_modules/@img/sharp-libvips-linux-x64/**',
+      'node_modules/@huggingface/transformers/**',
+      'node_modules/sharp/**',
+      'node_modules/@xenova/**',
+      'node_modules/transformers/**',
+    ],
+  },
   // Aggressive webpack config to reduce bundle size
   webpack: (config, { isServer }) => {
     if (isServer) {
