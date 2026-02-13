@@ -35,7 +35,6 @@ const nextConfig: NextConfig = {
   // Optimize for production
   experimental: {
     serverMinification: true,
-    optimizePackageImports: ['@langchain/core', '@langchain/community'],
   },
 };
 
