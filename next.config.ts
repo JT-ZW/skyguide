@@ -12,11 +12,30 @@ const nextConfig: NextConfig = {
     'langchain',
     'pdf-parse',
     'onnxruntime-node',
+    'sharp',
+    '@huggingface/transformers',
   ],
-  // Webpack config for canvas dependency
-  webpack: (config) => {
-    config.externals = [...(config.externals || []), { canvas: 'canvas' }];
+  // Aggressive webpack config to reduce bundle size
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Externalize heavy dependencies for serverless functions
+      config.externals = [
+        ...config.externals,
+        'onnxruntime-node',
+        'sharp',
+        '@huggingface/transformers',
+        'transformers',
+        '@xenova/transformers',
+        'canvas',
+        'pdf-parse',
+      ];
+    }
     return config;
+  },
+  // Optimize for production
+  experimental: {
+    serverMinification: true,
+    optimizePackageImports: ['@langchain/core', '@langchain/community'],
   },
 };
 
