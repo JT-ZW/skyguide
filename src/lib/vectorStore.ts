@@ -24,9 +24,32 @@ const client = new CloudClient({
 
 export const COLLECTION_NAME = 'rtg_policies';
 
+// Simple embedding function using Cohere API directly
+async function generateEmbedding(text: string): Promise<number[]> {
+  const response = await fetch('https://api.cohere.ai/v1/embed', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.COHERE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      texts: [text],
+      model: 'embed-english-v3.0',
+      input_type: 'search_query',
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cohere API error: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.embeddings[0];
+}
+
 export async function getOrCreateCollection() {
   try {
-    // Get existing collection (created during ingestion with embeddings)
+    // Get existing collection (already has embeddings from ingestion)
     const collection = await client.getCollection({
       name: COLLECTION_NAME,
     });
@@ -77,8 +100,12 @@ export async function queryDocuments(queryText: string, nResults: number = 5) {
   try {
     const collection = await getOrCreateCollection();
     
+    // Generate embedding for the query using Cohere
+    const queryEmbedding = await generateEmbedding(queryText);
+    
+    // Query using the embedding vector
     const results = await collection.query({
-      queryTexts: [queryText],
+      queryEmbeddings: [queryEmbedding],
       nResults,
     });
 
