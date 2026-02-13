@@ -1,4 +1,4 @@
-import { ChromaClient, CloudClient } from 'chromadb';
+import { CloudClient } from 'chromadb';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 
 // Load environment variables (for npm run ingest script)
@@ -11,16 +11,16 @@ if (typeof window === 'undefined') {
   }
 }
 
-// Support both local Docker and ChromaDB Cloud
-const client = process.env.CHROMA_API_KEY && process.env.CHROMA_TENANT
-  ? new CloudClient({
-      apiKey: process.env.CHROMA_API_KEY,
-      tenant: process.env.CHROMA_TENANT,
-      database: process.env.CHROMA_DATABASE || 'RTG-Policy-database1',
-    })
-  : new ChromaClient({
-      path: 'http://localhost:8000',
-    });
+// ChromaDB Cloud client (production-ready)
+if (!process.env.CHROMA_API_KEY || !process.env.CHROMA_TENANT) {
+  throw new Error('ChromaDB Cloud credentials are required. Please set CHROMA_API_KEY and CHROMA_TENANT environment variables.');
+}
+
+const client = new CloudClient({
+  apiKey: process.env.CHROMA_API_KEY,
+  tenant: process.env.CHROMA_TENANT,
+  database: process.env.CHROMA_DATABASE || 'RTG-Policy-database1',
+});
 
 export const COLLECTION_NAME = 'rtg_policies';
 
