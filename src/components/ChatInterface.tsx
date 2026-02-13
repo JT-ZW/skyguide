@@ -14,7 +14,7 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Refreshing Day! 👋 Welcome to Sky RTGGuide! I\'m Sky, your friendly AI assistant here to help with anything RTG-related - policies, dress codes, ISO standards, you name it! I can also help with general questions too. What can I help you with today?',
+      content: 'Refreshing Day! I\'m Sky, here to help you with RTG policies, procedures, and company guidelines. What can I help you with?',
       timestamp: '--:--', // Static timestamp to avoid hydration mismatch
     },
   ]);
@@ -44,10 +44,19 @@ export default function ChatInterface() {
     setIsLoading(true);
 
     try {
+      // Send conversation history (last 6 messages for context)
+      const conversationHistory = messages.slice(-6).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ 
+          message: input,
+          history: conversationHistory
+        }),
       });
 
       const data = await response.json();

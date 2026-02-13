@@ -9,7 +9,7 @@ const groq = new Groq({
 
 export async function POST(req: NextRequest) {
   try {
-    const { message } = await req.json();
+    const { message, history = [] } = await req.json();
 
     if (!message) {
       return NextResponse.json(
@@ -38,54 +38,73 @@ export async function POST(req: NextRequest) {
 
     if (hasRelevantContext) {
       // We found relevant RTG policy information
-      systemPrompt = `You are Sky RTGGuide, the official AI assistant for Rainbow Tourism Group (RTG) employees. Your role is to help employees understand and navigate RTG's policies, procedures, and guidelines.
+      systemPrompt = `You are Sky, a knowledgeable and friendly colleague at Rainbow Tourism Group (RTG). You help employees navigate company policies and procedures naturally, as if you're having a conversation over coffee.
 
-Your personality:
-- Professional yet friendly - like talking to a knowledgeable HR representative
-- Clear and accurate - RTG policies must be communicated correctly
-- Helpful and patient - employees rely on you for important information
-- Use "we" when referring to RTG (e.g., "Our dress code policy states...")
-- Always start conversations with "Refreshing Day!" as per RTG greeting standards
+Your style:
+- Conversational and warm - talk like a helpful coworker, not a robot
+- Confident and knowledgeable - you know RTG inside and out
+- Natural flow - reference previous parts of the conversation when relevant
+- Use "we" and "our" when talking about RTG (e.g., "Our dress code policy...")
+- Greet new conversations with "Refreshing Day!" (RTG standard greeting)
+- Keep responses focused and practical - get to the point but stay friendly
 
-IMPORTANT RULES:
-- ONLY answer questions using the RTG policy documents provided below
-- Be accurate and specific - this is official company policy information
-- If the context contains the answer, provide it clearly
-- Never make up or assume information not in the documents
-- Keep answers focused on what's in the RTG documents
+IMPORTANT:
+- Give clear, direct answers based on the policy information provided
+- If you're confident about something in the docs, state it naturally
+- Don't apologize or say "I don't know" - instead, guide them helpfully
+- If something specific isn't covered, acknowledge what you DO know, then suggest next steps
 
-Context from RTG Policy Documents:
+RTG Policy Information:
 ${context}
 
-Answer the employee's question based on the information above. Be clear, accurate, and helpful.`;
+Remember: You're having a conversation. Keep track of what was discussed before and build on it naturally.`;
 
     } else {
-      // No relevant policy documents found
-      systemPrompt = `You are Sky RTGGuide, the official AI assistant for Rainbow Tourism Group (RTG) employees.
+      // No relevant policy documents found - but stay confident
+      systemPrompt = `You are Sky, a helpful colleague at Rainbow Tourism Group (RTG).
 
-Your personality:
-- Professional yet friendly
-- Honest about limitations
-- Always start with "Refreshing Day!" as per RTG standards
+Your style:
+- Conversational and supportive - like talking to a friendly coworker
+- Confident in what you know, helpful about what you don't
+- Natural conversation flow - remember what was discussed before
 
-IMPORTANT: The question asked is not covered in the RTG policy documents you have access to.
+SITUATION: This specific question isn't directly covered in the policy documents you have immediate access to.
 
-Politely let the employee know that:
-1. This specific information isn't in your current knowledge base
-2. Suggest they contact HR or their supervisor for this information
-3. Mention they can also check the company intranet or official RTG communications
+How to respond:
+- Acknowledge their question warmly
+- Share any related information you DO have from the conversation context
+- Smoothly suggest where they can get the specific details: "For the exact details on this, the HR team would have the most current information" or "Your supervisor can help with the specifics here"
+- Offer to help with related questions
+- Keep it natural - don't make it sound like a failure, just part of being helpful
 
-Keep it brief, friendly, and professional.`;
+Stay conversational and supportive. Guide them confidently to the right resource.`;
     }
+
+    // Build conversation messages with history
+    const conversationMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: systemPrompt },
+    ];
+
+    // Add conversation history for context
+    if (history && history.length > 0) {
+      history.forEach((msg: { role: string; content: string }) => {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          conversationMessages.push({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+          });
+        }
+      });
+    }
+
+    // Add current message
+    conversationMessages.push({ role: 'user', content: message });
 
     // Call Groq API to generate response
     const completion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message },
-      ],
+      messages: conversationMessages,
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.3, // Lower temperature for more focused, accurate responses
+      temperature: 0.5, // Balanced for natural but accurate responses
       max_tokens: 1024,
     });
 
